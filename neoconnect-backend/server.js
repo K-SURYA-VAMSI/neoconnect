@@ -12,10 +12,41 @@ require("./jobs/escalationJob");
 
 const app = express();
 
-app.use(cors({
- origin: process.env.FRONTEND_URL,
- credentials: true
-}));
+const allowedOrigins = (process.env.FRONTEND_URLS || process.env.FRONTEND_URL || "")
+ .split(",")
+ .map((origin) => origin.trim())
+ .filter(Boolean);
+
+const allowVercelPreviews = process.env.ALLOW_VERCEL_PREVIEWS === "true";
+
+app.use(
+ cors({
+  origin: (origin, callback) => {
+   if (!origin) {
+    return callback(null, true);
+   }
+
+   if (allowedOrigins.includes(origin)) {
+    return callback(null, true);
+   }
+
+   if (allowVercelPreviews) {
+    try {
+     const { hostname } = new URL(origin);
+
+     if (hostname.endsWith(".vercel.app")) {
+      return callback(null, true);
+     }
+    } catch (error) {
+     return callback(new Error("Invalid CORS origin"));
+    }
+   }
+
+   return callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true
+ })
+);
 app.use(express.json());
 app.use(cookieParser());
 app.use("/uploads", express.static("uploads"));
