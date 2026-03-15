@@ -12,7 +12,7 @@ require("./jobs/escalationJob");
 
 const app = express();
 
-const allowedOrigins = (process.env.FRONTEND_URLS || process.env.FRONTEND_URL || "")
+const allowedOrigins = (process.env.FRONTEND_URL || "")
  .split(",")
  .map((origin) => origin.trim())
  .filter(Boolean);
