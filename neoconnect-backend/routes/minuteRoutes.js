@@ -1,25 +1,20 @@
 const express = require("express");
 const router = express.Router();
 
-const {
- getAnalytics,
- getPublicHubImpact
-} = require("../controllers/analyticsController");
+const { createMinute, getMinutes } = require("../controllers/minuteController");
 
 const authMiddleware = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
+const upload = require("../middleware/upload");
 
-router.get(
+router.post(
  "/",
  authMiddleware,
  roleMiddleware("secretariat", "admin"),
- getAnalytics
+ upload.single("file"),
+ createMinute
 );
 
-router.get(
- "/public-hub/impact",
- authMiddleware,
- getPublicHubImpact
-);
+router.get("/", authMiddleware, getMinutes);
 
 module.exports = router;

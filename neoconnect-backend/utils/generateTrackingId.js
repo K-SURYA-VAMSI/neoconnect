@@ -1,12 +1,22 @@
-const Complaint = require("../models/Complaint");
+const Counter = require("../models/Counter");
 
 const generateTrackingId = async () => {
 
  const year = new Date().getFullYear();
 
- const count = await Complaint.countDocuments();
+ const key = `complaint:${year}`;
 
- const number = String(count + 1).padStart(3, "0");
+ const counter = await Counter.findByIdAndUpdate(
+  key,
+  { $inc: { seq: 1 } },
+  {
+   new: true,
+   upsert: true,
+   setDefaultsOnInsert: true
+  }
+ );
+
+ const number = String(counter.seq).padStart(3, "0");
 
  return `NEO-${year}-${number}`;
 };

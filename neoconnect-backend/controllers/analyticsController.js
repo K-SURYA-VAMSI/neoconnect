@@ -73,3 +73,72 @@ const hotspots = await Complaint.aggregate([
 
 };
 
+exports.getPublicHubImpact = async (req, res) => {
+
+ try {
+
+  const now = new Date();
+  const ninetyDaysAgo = new Date(now);
+  ninetyDaysAgo.setDate(now.getDate() - 90);
+
+  const [
+   totalResolved,
+   resolvedLast90Days,
+   openEscalated,
+   topImpactAreas,
+   recentResolutions
+  ] = await Promise.all([
+   Complaint.countDocuments({ status: "Resolved" }),
+   Complaint.countDocuments({
+    status: "Resolved",
+    updatedAt: { $gte: ninetyDaysAgo }
+   }),
+   Complaint.countDocuments({ status: "Escalated" }),
+   Complaint.aggregate([
+    {
+     $match: { status: "Resolved" }
+    },
+    {
+     $group: {
+      _id: {
+       department: "$department",
+       category: "$category"
+      },
+      resolvedCount: { $sum: 1 }
+     }
+    },
+    {
+     $sort: { resolvedCount: -1 }
+    },
+    {
+     $limit: 5
+    }
+   ]),
+   Complaint.find({ status: "Resolved" })
+    .select("trackingId title category department updatedAt")
+    .sort({ updatedAt: -1 })
+    .limit(10)
+  ]);
+
+  res.json({
+   summary: {
+    totalResolved,
+    resolvedLast90Days,
+    openEscalated
+   },
+   topImpactAreas,
+   recentResolutions
+  });
+
+ } catch (error) {
+
+  console.error(error);
+
+  res.status(500).json({
+   message: "Server error"
+  });
+
+ }
+
+};
+
